@@ -1,14 +1,43 @@
 import { MS5_URL, fetchJson } from "./config";
 
-// Contrato propuesto para MS5 (pendiente de confirmar con Persona 5 / Tommy,
-// que todavia no ha desplegado este microservicio). Son 2 endpoints GET que
-// exponen resultados de consultas Athena, cruzando los datos de MS1 y MS2
-// ya cargados en S3:
-//   GET /analitica/categorias/resumen
-//     -> [{ categoriaId, categoria, totalPlatos, calificacionPromedio, totalPedidos }]
-//   GET /analitica/top-platos?limit=5
-//     -> [{ platoId, nombre, categoria, calificacionPromedio, totalPedidos }]
+function mapResumen(row) {
+  return {
+    categoriaId: row.categoria_id,
+    categoria: row.categoria,
+    totalPlatos: Number(row.total_platos),
+    calificacionPromedio:
+      row.calificacion_promedio !== null
+        ? Number(row.calificacion_promedio)
+        : null,
+    totalPedidos: Number(row.total_pedidos),
+  };
+}
+
+function mapTopPlato(row) {
+  return {
+    platoId: row.plato_id,
+    nombre: row.nombre,
+    categoria: row.categoria,
+    calificacionPromedio:
+      row.calificacion_promedio !== null
+        ? Number(row.calificacion_promedio)
+        : null,
+    totalPedidos: Number(row.total_pedidos),
+  };
+}
+
 export const ms5 = {
-  resumenPorCategoria: () => fetchJson(`${MS5_URL}/analitica/categorias/resumen`),
-  topPlatos: (limit = 5) => fetchJson(`${MS5_URL}/analitica/top-platos?limit=${limit}`),
+  resumenPorCategoria: async () => {
+    const res = await fetchJson(
+      `${MS5_URL}/analitica/categorias/resumen`
+    );
+    return res.map(mapResumen);
+  },
+
+  topPlatos: async (limit = 5) => {
+    const res = await fetchJson(
+      `${MS5_URL}/analitica/top-platos?limit=${limit}`
+    );
+    return res.map(mapTopPlato);
+  },
 };
